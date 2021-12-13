@@ -5,6 +5,7 @@
 #include <memory>
 
 class Drawer;
+class FunctionalObjectStatus;
 
 class ComplexShape
 {
@@ -18,14 +19,18 @@ private:
 public:
     ComplexShape(std::vector<std::shared_ptr<sf::Shape>> shapes, std::vector<sf::Vector2f> positions, sf::Vector2f center_position);
     ComplexShape(const ComplexShape& shape);
+
     void change_size(float coef);
-    sf::Color get_color(std::size_t index) const;
     void set_color(std::size_t index, sf::Color color);
+    void set_position(float x, float y);
     void rotate(float angle);
+
+    sf::Color get_color(std::size_t index) const;
     std::shared_ptr<sf::Shape> get_shape(std::size_t index) const;
     sf::Vector2f get_coordinates(std::size_t index) const;
     std::size_t get_complexity() const;
     sf::Vector2f get_position() const;
+    bool contains(float x, float y) const;
 };
 
 class Drawer
@@ -45,6 +50,37 @@ public:
     DefaultDrawer(std::shared_ptr<sf::RenderTexture> picture);
     void draw(const ComplexShape& shape) override;
 };
+
+class IFunctor
+{
+public:
+    virtual void operator()() = 0;
+};
+class FunctionalObject
+{
+private:
+    std::shared_ptr<IFunctor> hover_func = nullptr;
+    std::shared_ptr<IFunctor> mouse_func = nullptr;
+    std::shared_ptr<IFunctor> move_func = nullptr;
+    std::shared_ptr<IFunctor> break_hover_func = nullptr;
+public:
+    ComplexShape shape;
+    FunctionalObject(const ComplexShape& shape);
+    void set_hover_action(std::shared_ptr<IFunctor> action);
+    void set_mouse_click_action(std::shared_ptr<IFunctor> action);
+    void set_move_action(std::shared_ptr<IFunctor> action);
+    void set_break_hovering_action(std::shared_ptr<IFunctor> action);
+    void act_on_hovering();
+    void act_on_click();
+    void act_on_move();
+    void act_on_break_hovering();
+    bool check_coordinate(float x, float y);
+
+    bool is_hovering = false;
+    bool is_moving = false;
+};
+
+
 
 
 

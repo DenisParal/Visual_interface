@@ -24,6 +24,12 @@
             shape->setScale(coef,coef);
         }
     }
+
+    void ComplexShape::set_position(float x, float y)
+    {
+        center_position = sf::Vector2f(x, y);
+    }
+
     sf::Color ComplexShape::get_color(std::size_t index) const
     {
         return shapes[index]->getFillColor();
@@ -66,6 +72,21 @@
         return center_position;
     }
 
+    bool ComplexShape::contains(float x, float y) const
+    {
+        bool result = true;
+        for(auto& shape : shapes)
+        {
+            sf::FloatRect tmp_rect = shape->getGlobalBounds();
+            if(!tmp_rect.contains(x,y))
+            {
+                result = false;
+                break;
+            }
+        }
+        return result;
+    }
+
 //~ComplexShape
 
 //DefaultDrawer
@@ -92,3 +113,46 @@ void DefaultDrawer::draw(const ComplexShape& shape)
     }
 }
 //~DefaultDrawer
+
+// FunctionalObject
+
+FunctionalObject::FunctionalObject(const ComplexShape& shape) : shape(shape) {}
+
+void FunctionalObject::set_hover_action(std::shared_ptr<IFunctor> action)
+{
+    hover_func = action;
+}
+void FunctionalObject::set_mouse_click_action(std::shared_ptr<IFunctor> action)
+{
+    mouse_func = action;
+}
+void FunctionalObject::set_move_action(std::shared_ptr<IFunctor> action)
+{
+    move_func = action;
+}
+void FunctionalObject::set_break_hovering_action(std::shared_ptr<IFunctor> action)
+{
+    break_hover_func = action;
+}
+
+void FunctionalObject::act_on_hovering()
+{
+    hover_func->operator()();
+}
+void FunctionalObject::act_on_click()
+{
+    mouse_func->operator()();
+}
+void FunctionalObject::act_on_move()
+{
+    move_func->operator()();
+}
+void FunctionalObject::act_on_break_hovering()
+{
+    break_hover_func->operator()();
+}
+bool FunctionalObject::check_coordinate(float x, float y)
+{
+    return shape.contains(x,y);
+}
+// ~FunctionalObject
