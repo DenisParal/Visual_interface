@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include "core.hpp"
 #include <memory>
+#include <iostream>
 
 namespace Actions
 {
@@ -39,11 +40,13 @@ class SimpleMoveEvent : public IFunctor
 {
 private:
     std::shared_ptr<FunctionalObject> func_obj;
+    sf::Window& window;
+    sf::Vector2f offset;
 public:
-    SimpleMoveEvent(std::shared_ptr<FunctionalObject> func_obj) : func_obj(func_obj) {}
+    SimpleMoveEvent(std::shared_ptr<FunctionalObject> func_obj, sf::Window& window, sf::Vector2f offset) : func_obj(func_obj), window(window), offset(offset) {}
     void operator()()
     {
-        func_obj->shape.set_position(sf::Mouse::getPosition().x, sf::Mouse::getPosition().y);
+        func_obj->shape.set_position(sf::Mouse::getPosition(window).x + offset.x, 600 - sf::Mouse::getPosition(window).y + offset.y);
     }
 };
 }
