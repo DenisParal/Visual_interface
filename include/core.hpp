@@ -5,7 +5,7 @@
 #include <memory>
 
 class Drawer;
-class FunctionalObjectStatus;
+class IFunctor;
 
 class ComplexShape
 {
@@ -51,11 +51,7 @@ public:
     void draw(const ComplexShape& shape) override;
 };
 
-class IFunctor
-{
-public:
-    virtual void operator()() = 0;
-};
+
 class FunctionalObject
 {
 private:
@@ -74,12 +70,18 @@ public:
     void act_on_click();
     void act_on_move();
     void act_on_break_hovering();
+    std::shared_ptr<FunctionalObject> get_entity();
     bool check_coordinate(float x, float y);
 
     bool is_hovering = false;
     bool is_moving = false;
 };
 
+class IFunctor
+{
+public:
+    virtual void operator()(FunctionalObject* obj) = 0;
+};
 
 
 

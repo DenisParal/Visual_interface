@@ -3,6 +3,30 @@
 #include "actions.hpp"
 #include <iostream>
 
+std::shared_ptr<FunctionalObject> chose_obj(sf::RenderWindow& window, const std::vector<std::shared_ptr<FunctionalObject>>& obj_v)
+{
+    std::shared_ptr<FunctionalObject> chosen = nullptr;
+    sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
+    for(auto& ptr : obj_v)
+    {
+        if(ptr->shape.contains(mouse_position.x, 600 - mouse_position.y))
+        {
+            chosen = ptr;
+        }
+    }
+    return chosen;
+}
+
+std::vector<std::shared_ptr<sf::Shape>> get_custom_circle()
+{
+    std::shared_ptr<sf::Shape> circle1 = std::make_shared<sf::CircleShape>(20.0f,10);
+    std::shared_ptr<sf::Shape> circle2 = std::make_shared<sf::CircleShape>(30.0f,10);
+    circle1->setFillColor(sf::Color::White);
+    circle2->setFillColor(sf::Color::Black);
+    std::vector<std::shared_ptr<sf::Shape>> res{circle2, circle1};
+    return res;
+}
+
 int main()
 {
     auto lambda = [](sf::RenderWindow& window)
@@ -11,46 +35,23 @@ int main()
 
         std::shared_ptr<sf::RenderTexture> picture = std::make_shared<sf::RenderTexture>();
         picture->create(800,600);
-        std::shared_ptr<sf::Shape> circle1 = std::make_shared<sf::CircleShape>(20.0f,10);
-        std::shared_ptr<sf::Shape> circle2 = std::make_shared<sf::CircleShape>(30.0f,10);
-        circle1->setFillColor(sf::Color::White);
-        circle2->setFillColor(sf::Color::Black);
-        ComplexShape c1{std::vector<std::shared_ptr<sf::Shape>>{circle2, circle1}, std::vector<sf::Vector2f>{{0.0f, 0.0f}, {0.0f, 0.0f}}, sf::Vector2f{300,300}};
         std::shared_ptr<Drawer> drawer = std::make_shared<DefaultDrawer>(std::shared_ptr<sf::RenderTexture>(picture));
 
-        std::shared_ptr<FunctionalObject> obj = std::make_shared<FunctionalObject>(c1);
+        std::shared_ptr<IFunctor> hover_action = std::make_shared<Actions::SimpleColorChangeHoverEvent>(sf::Color::Green);
+        std::shared_ptr<IFunctor> mouse_click = std::make_shared<Actions::SwapColorChangeMouseClickEvent>(sf::Color::Red);
+        std::shared_ptr<IFunctor> hover_break = std::make_shared<Actions::SimpleColorChangeHoverEvent>(sf::Color::White);
+        std::shared_ptr<IFunctor> move_action = std::make_shared<Actions::SimpleMoveEvent> (window, sf::Vector2f{0, 0}, sf::Color::Red);
 
-        std::shared_ptr<IFunctor> hover_action = std::make_shared<Actions::SimpleColorChangeHoverEvent>(sf::Color::Green, obj);
-        std::shared_ptr<IFunctor> mouse_click = std::make_shared<Actions::SwapColorChangeMouseClickEvent>(sf::Color::Red, obj);
-        std::shared_ptr<IFunctor> hover_break = std::make_shared<Actions::SimpleColorChangeHoverEvent>(sf::Color::White, obj);
-        std::shared_ptr<IFunctor> move_action = std::make_shared<Actions::SimpleMoveEvent>(obj, window, sf::Vector2f{0, 0});
-
-        obj->set_hover_action(hover_action);
-        obj->set_mouse_click_action(mouse_click);
-        obj->set_move_action(move_action);
-        obj->set_break_hovering_action(hover_break);
         
+        ComplexShape c1{get_custom_circle(), std::vector<sf::Vector2f>{{0.0f, 0.0f}, {0.0f, 0.0f}}, sf::Vector2f{300,300}};
+
+        std::vector<std::shared_ptr<FunctionalObject>> obj_v;
+        
+        std::shared_ptr<FunctionalObject> chosen = nullptr;
+
         while(window.isOpen())
         {
             sf::Event event;
-            while(sf::Mouse::isButtonPressed(sf::Mouse::Left))
-            {
-                obj->act_on_move();
-                window.clear(sf::Color::White);
-                picture->clear(sf::Color::White);
-                drawer->draw(obj->shape);
-                sf::Sprite sprite1(picture->getTexture());
-
-                window.draw(sprite1);
-                window.display();
-            }
-            
-            if(obj->is_moving)
-            {
-                std::cout <<"UNPRESSED\n";
-                obj->act_on_click();
-                obj->is_moving=false;
-            }
 
             while (window.pollEvent(event))
             {
@@ -61,36 +62,51 @@ int main()
 
                 if (event.type == sf::Event::MouseButtonPressed)
                 {
-                    sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
-                    if(obj->shape.contains(mouse_position.x, 600 - mouse_position.y))
+                    if(chosen != nullptr)
                     {
-                        obj->act_on_click();
-                        obj->is_moving = true;
-                        break;
+                        while(sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                        {
+                            chosen->act_on_move();
+                            window.clear(sf::Color::White);
+                            picture->clear(sf::Color::White);
+                            drawer->draw(chosen->shape);
+                            sf::Sprite sprite1(picture->getTexture());
+
+                            window.draw(sprite1);
+                            window.display();
+                        }
+                        chosen->act_on_click();
+                        chosen->is_moving=false;
+                    }
+                    else
+                    {
+                        
+                        std::shared_ptr<FunctionalObject> obj = std::make_shared<FunctionalObject>(ComplexShape{get_custom_circle(), std::vector<sf::Vector2f>{{0.0f, 0.0f}, {0.0f, 0.0f}}, sf::Vector2f{300,300}});
+                        obj->shape.set_position(sf::Mouse::getPosition(window).x, 600 - sf::Mouse::getPosition(window).y);
+                        obj->set_hover_action(hover_action);
+                        obj->set_mouse_click_action(mouse_click);
+                        obj->set_move_action(move_action);
+                        obj->set_break_hovering_action(hover_break);
+                        obj_v.push_back(obj);
+                        chosen = obj_v[obj_v.size()-1];
+                        chosen->act_on_hovering();
                     }
                 }
 
                 if (event.type == sf::Event::MouseMoved)
                 {
-                    // std::cout << sf::Mouse::getPosition().x - obj->shape.get_position().x << " " << sf::Mouse::getPosition().y - obj->shape.get_position().y << "\n";
-                    // std::cout << sf::Mouse::getPosition().x << " " << sf::Mouse::getPosition().y << "\n";
-                    sf::Vector2i mouse_position = sf::Mouse::getPosition(window);
-                    if(!obj->is_moving)
+                    std::shared_ptr<FunctionalObject> chosen_tmp = chose_obj(window, obj_v);
+                    if(chosen_tmp != nullptr && chosen!= nullptr && !chosen->is_moving)
                     {
-                        if(obj->shape.contains(mouse_position.x, 600 - mouse_position.y))
-                        {
-                            obj->act_on_hovering();
-                        }
-                        else
-                        {
-                            obj->is_hovering = false;
-                            obj->act_on_break_hovering();
-                        }
+                        chosen = chosen_tmp;
+                        chosen->act_on_hovering();
                     }
-                    // if(obj->is_moving)
-                    // {
-                    //     obj->act_on_move();
-                    // }
+                    else if(chosen!= nullptr && !chosen->is_moving)
+                    {
+                        chosen->is_hovering = false;
+                        chosen->act_on_break_hovering();
+                        chosen.reset();
+                    }
                 }
 
                 
@@ -98,7 +114,10 @@ int main()
 
             window.clear(sf::Color::White);
             picture->clear(sf::Color::White);
-            drawer->draw(obj->shape);
+            for(auto& ptr : obj_v)
+            {
+                drawer->draw(ptr->shape);
+            }
             sf::Sprite sprite1(picture->getTexture());
 
             window.draw(sprite1);

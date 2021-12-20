@@ -122,14 +122,17 @@ void FunctionalObject::set_hover_action(std::shared_ptr<IFunctor> action)
 {
     hover_func = action;
 }
+
 void FunctionalObject::set_mouse_click_action(std::shared_ptr<IFunctor> action)
 {
     mouse_func = action;
 }
+
 void FunctionalObject::set_move_action(std::shared_ptr<IFunctor> action)
 {
     move_func = action;
 }
+
 void FunctionalObject::set_break_hovering_action(std::shared_ptr<IFunctor> action)
 {
     break_hover_func = action;
@@ -137,19 +140,31 @@ void FunctionalObject::set_break_hovering_action(std::shared_ptr<IFunctor> actio
 
 void FunctionalObject::act_on_hovering()
 {
-    hover_func->operator()();
+    if(hover_func)
+    {
+        hover_func->operator()(this);
+    }
 }
 void FunctionalObject::act_on_click()
 {
-    mouse_func->operator()();
+    if(mouse_func)
+    {
+        mouse_func->operator()(this);
+    }
 }
 void FunctionalObject::act_on_move()
 {
-    move_func->operator()();
+    if(move_func)
+    {
+        move_func->operator()(this);
+    }
 }
 void FunctionalObject::act_on_break_hovering()
 {
-    break_hover_func->operator()();
+    if(break_hover_func)
+    {
+        break_hover_func->operator()(this);
+    }
 }
 bool FunctionalObject::check_coordinate(float x, float y)
 {
