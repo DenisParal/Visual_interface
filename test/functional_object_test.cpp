@@ -62,14 +62,19 @@ int main()
 
                 if (event.type == sf::Event::MouseButtonPressed)
                 {
+                    chosen = chose_obj(window, obj_v);
                     if(chosen != nullptr)
                     {
+                        chosen->is_moving=true;
                         while(sf::Mouse::isButtonPressed(sf::Mouse::Left))
                         {
                             chosen->act_on_move();
                             window.clear(sf::Color::White);
                             picture->clear(sf::Color::White);
-                            drawer->draw(chosen->shape);
+                            for(auto& ptr : obj_v)
+                            {
+                                drawer->draw(ptr->shape);
+                            }
                             sf::Sprite sprite1(picture->getTexture());
 
                             window.draw(sprite1);
@@ -96,7 +101,7 @@ int main()
                 if (event.type == sf::Event::MouseMoved)
                 {
                     std::shared_ptr<FunctionalObject> chosen_tmp = chose_obj(window, obj_v);
-                    if(chosen_tmp != nullptr && chosen!= nullptr && !chosen->is_moving)
+                    if(chosen_tmp != nullptr)
                     {
                         chosen = chosen_tmp;
                         chosen->act_on_hovering();
