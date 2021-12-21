@@ -7,7 +7,45 @@
 class Drawer;
 class IFunctor;
 
-class ComplexShape
+
+class IMemento
+{
+public:
+    virtual void restore() = 0;
+};
+
+class IMementable
+{
+public:
+    virtual std::shared_ptr<IMemento> save() = 0;
+};
+
+class MementoManager : public IMementable
+{
+private:
+    MementoManager();
+    static std::shared_ptr<MementoManager> instance;
+    std::vector<std::shared_ptr<IMementable>> mementable_list;
+
+    class Memento : public IMemento
+    {
+    private:
+        std::shared_ptr<MementoManager> owner;
+        std::vector<std::shared_ptr<IMementable>> mementable_list;
+        std::vector<std::shared_ptr<IMemento>> memory;
+    public:
+        Memento(std::shared_ptr<MementoManager> owner, const std::vector<std::shared_ptr<IMementable>>& mementable_list, const std::vector<std::shared_ptr<IMemento>>& memory);
+        void restore() override;
+    };
+
+public:
+    static std::shared_ptr<MementoManager> get_instance();
+    void registrate(std::shared_ptr<IMementable> obj);
+    std::shared_ptr<IMemento> save() override;
+};
+
+
+class ComplexShape : public IMementable
 {
 friend class Drawer;
 private:
@@ -16,6 +54,21 @@ private:
     sf::Vector2f center_position;
     float scale = 1;
     std::size_t complexity;
+
+    class Memento : public IMemento
+    {
+    private:
+        std::shared_ptr<ComplexShape> owner;
+        std::vector<std::shared_ptr<sf::Shape>> shapes;
+        std::vector<sf::Vector2f> positions;
+        sf::Vector2f center_position;
+        float scale = 1;
+        std::size_t complexity;
+    public:
+        Memento(std::shared_ptr<ComplexShape> owner, const std::vector<std::shared_ptr<sf::Shape>>& shapes, const std::vector<sf::Vector2f>& positions,
+                sf::Vector2f center_position, float scale, std::size_t complexity);
+        void restore() override;
+    };
 public:
     ComplexShape(std::vector<std::shared_ptr<sf::Shape>> shapes, std::vector<sf::Vector2f> positions, sf::Vector2f center_position);
     ComplexShape(const ComplexShape& shape);
@@ -31,6 +84,8 @@ public:
     std::size_t get_complexity() const;
     sf::Vector2f get_position() const;
     bool contains(float x, float y) const;
+
+    std::shared_ptr<IMemento> save() override;
 };
 
 class Drawer
@@ -52,13 +107,28 @@ public:
 };
 
 
-class FunctionalObject
+class FunctionalObject : public IMementable
 {
 private:
     std::shared_ptr<IFunctor> hover_func = nullptr;
     std::shared_ptr<IFunctor> mouse_func = nullptr;
     std::shared_ptr<IFunctor> move_func = nullptr;
     std::shared_ptr<IFunctor> break_hover_func = nullptr;
+
+    class Memento : public IMemento
+    {
+    private:
+        std::shared_ptr<FunctionalObject> owner;//Probably I should replace std::shared_ptr with raw pointer
+        std::shared_ptr<IFunctor> hover_func = nullptr;
+        std::shared_ptr<IFunctor> mouse_func = nullptr;
+        std::shared_ptr<IFunctor> move_func = nullptr;
+        std::shared_ptr<IFunctor> break_hover_func = nullptr;
+        std::shared_ptr<IMemento> shape_save;
+    public:
+        Memento(std::shared_ptr<FunctionalObject> owner, std::shared_ptr<IFunctor> hover_func, std::shared_ptr<IFunctor> mouse_func, std::shared_ptr<IFunctor> move_func,
+                std::shared_ptr<IFunctor> break_hover_func, std::shared_ptr<IMemento> shape_save);
+        void restore() override;
+    };
 public:
     ComplexShape shape;
     FunctionalObject(const ComplexShape& shape);
@@ -75,6 +145,8 @@ public:
 
     bool is_hovering = false;
     bool is_moving = false;
+
+    std::shared_ptr<IMemento> save() override;
 };
 
 class IFunctor
@@ -82,8 +154,6 @@ class IFunctor
 public:
     virtual void operator()(FunctionalObject* obj) = 0;
 };
-
-
 
 
 template<typename Func>

@@ -87,6 +87,25 @@
         return result;
     }
 
+    ComplexShape::Memento::Memento(std::shared_ptr<ComplexShape> owner, const std::vector<std::shared_ptr<sf::Shape>>& shapes, const std::vector<sf::Vector2f>& positions,
+                sf::Vector2f center_position, float scale, std::size_t complexity): owner(owner), shapes(shapes), positions(positions), center_position(center_position),
+                                                                                    scale(scale), complexity(complexity) {}
+
+    void ComplexShape::Memento::restore()
+    {
+        owner->shapes = shapes;
+        owner->positions = positions;
+        owner->center_position = center_position;
+        owner->scale = scale;
+        owner->complexity = complexity;
+    }
+
+    std::shared_ptr<IMemento> ComplexShape::save()
+    {
+        std::shared_ptr<IMemento> memento = std::make_shared<Memento>(std::shared_ptr<ComplexShape>(this), shapes, positions, center_position, scale, complexity);
+        return memento;
+    }
+
 //~ComplexShape
 
 //DefaultDrawer
@@ -116,7 +135,11 @@ void DefaultDrawer::draw(const ComplexShape& shape)
 
 // FunctionalObject
 
-FunctionalObject::FunctionalObject(const ComplexShape& shape) : shape(shape) {}
+FunctionalObject::FunctionalObject(const ComplexShape& shape) : shape(shape) 
+{
+    std::shared_ptr<FunctionalObject> ptr;
+    MementoManager::get_instance()->registrate(std::shared_ptr<IMementable>(this));//probably there will be error with shared_ptr
+}
 
 void FunctionalObject::set_hover_action(std::shared_ptr<IFunctor> action)
 {
@@ -170,4 +193,67 @@ bool FunctionalObject::check_coordinate(float x, float y)
 {
     return shape.contains(x,y);
 }
+
+FunctionalObject::Memento::Memento(std::shared_ptr<FunctionalObject> owner, std::shared_ptr<IFunctor> hover_func, std::shared_ptr<IFunctor> mouse_func, std::shared_ptr<IFunctor> move_func,
+                std::shared_ptr<IFunctor> break_hover_func, std::shared_ptr<IMemento> shape_save): owner(owner), hover_func(hover_func), mouse_func(mouse_func),
+                                                                                                   move_func(move_func), break_hover_func(break_hover_func), shape_save(shape_save) {}
+void FunctionalObject::Memento::restore()
+{
+    owner->hover_func = hover_func;
+    owner->mouse_func = mouse_func;
+    owner->move_func = move_func;
+    owner->break_hover_func = break_hover_func;
+    shape_save->restore();
+}
+
+std::shared_ptr<IMemento> FunctionalObject::save()
+{
+    std::shared_ptr<IMemento> shape_save = shape.save();
+    std::shared_ptr<IMemento> memento = std::make_shared<Memento>(std::shared_ptr<FunctionalObject>(this), hover_func, mouse_func, move_func, break_hover_func, shape_save);
+    return memento;
+}
+
 // ~FunctionalObject
+
+// Memento
+
+    std::shared_ptr<MementoManager> MementoManager::instance;
+    MementoManager::Memento::Memento(std::shared_ptr<MementoManager> owner, const std::vector<std::shared_ptr<IMementable>>& mementable_list,
+                                     const std::vector<std::shared_ptr<IMemento>>& memory): owner(owner), mementable_list(mementable_list), memory(memory) {}
+
+    void MementoManager::Memento::restore()
+    {
+        owner->mementable_list = mementable_list;
+        for(auto& item : memory)
+        {
+            item->restore();
+        }
+    }
+    std::shared_ptr<MementoManager> MementoManager::get_instance()
+    {
+        if(instance == nullptr)
+        {
+            instance = std::unique_ptr<MementoManager>(new MementoManager{});
+        }
+        return instance;
+    }
+
+    MementoManager::MementoManager(){}
+
+    void MementoManager::registrate(std::shared_ptr<IMementable> obj)
+    {
+        mementable_list.push_back(obj);
+    }
+
+    std::shared_ptr<IMemento> MementoManager::save()
+    {
+        std::vector<std::shared_ptr<IMemento>> memory(mementable_list.size());
+        for(auto& item : mementable_list)
+        {
+            memory.push_back(item->save());
+        }
+        std::shared_ptr<IMemento> memento = std::make_shared<Memento>(instance, mementable_list, memory);
+        return memento;
+    }
+
+// ~Memento

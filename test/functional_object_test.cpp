@@ -32,6 +32,7 @@ int main()
     auto lambda = [](sf::RenderWindow& window)
     {
         auto act1 = [&window](){window.close();};
+        std::shared_ptr<IMemento> save = nullptr;
 
         std::shared_ptr<sf::RenderTexture> picture = std::make_shared<sf::RenderTexture>();
         picture->create(800,600);
