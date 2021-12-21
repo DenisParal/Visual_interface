@@ -17,7 +17,7 @@ public:
 class IMementable
 {
 public:
-    virtual std::shared_ptr<IMemento> save() = 0;
+    virtual IMemento* save() = 0;
 };
 
 class MementoManager : public IMementable
@@ -25,23 +25,23 @@ class MementoManager : public IMementable
 private:
     MementoManager();
     static MementoManager* instance;
-    std::vector<std::shared_ptr<IMementable>> mementable_list;
+    std::vector<IMementable*> mementable_list;
 
     class Memento : public IMemento
     {
     private:
         std::shared_ptr<MementoManager> owner;
-        std::vector<std::shared_ptr<IMementable>> mementable_list;
-        std::vector<std::shared_ptr<IMemento>> memory;
+        std::vector<IMementable*> mementable_list;
+        std::vector<IMemento*> memory;
     public:
-        Memento(MementoManager* owner, const std::vector<std::shared_ptr<IMementable>>& mementable_list, const std::vector<std::shared_ptr<IMemento>>& memory);
+        Memento(MementoManager* owner, const std::vector<IMementable*>& mementable_list, const std::vector<IMemento*>& memory);
         void restore() override;
     };
 
 public:
     static MementoManager* get_instance();
-    void registrate(std::shared_ptr<IMementable> obj);
-    std::shared_ptr<IMemento> save() override;
+    void registrate(IMementable* obj);
+    IMemento* save() override;
 };
 
 
@@ -85,7 +85,7 @@ public:
     sf::Vector2f get_position() const;
     bool contains(float x, float y) const;
 
-    std::shared_ptr<IMemento> save() override;
+    IMemento* save() override;
 };
 
 class Drawer
@@ -126,7 +126,7 @@ private:
         std::shared_ptr<IMemento> shape_save;
     public:
         Memento(FunctionalObject* owner, std::shared_ptr<IFunctor> hover_func, std::shared_ptr<IFunctor> mouse_func, std::shared_ptr<IFunctor> move_func,
-                std::shared_ptr<IFunctor> break_hover_func, std::shared_ptr<IMemento> shape_save);
+                std::shared_ptr<IFunctor> break_hover_func, IMemento* shape_save);
         void restore() override;
     };
 public:
@@ -146,7 +146,7 @@ public:
     bool is_hovering = false;
     bool is_moving = false;
 
-    std::shared_ptr<IMemento> save() override;
+    IMemento* save() override;
 };
 
 class IFunctor

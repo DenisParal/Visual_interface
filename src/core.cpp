@@ -100,9 +100,9 @@
         owner->complexity = complexity;
     }
 
-    std::shared_ptr<IMemento> ComplexShape::save()
+    IMemento* ComplexShape::save()
     {
-        std::shared_ptr<IMemento> memento = std::make_shared<Memento>(this, shapes, positions, center_position, scale, complexity);
+        IMemento* memento = new Memento(this, shapes, positions, center_position, scale, complexity);
         return memento;
     }
 
@@ -138,7 +138,7 @@ void DefaultDrawer::draw(const ComplexShape& shape)
 FunctionalObject::FunctionalObject(const ComplexShape& shape) : shape(shape) 
 {
     std::shared_ptr<FunctionalObject> ptr;
-    MementoManager::get_instance()->registrate(std::shared_ptr<IMementable>(this));//probably there will be error with shared_ptr
+    MementoManager::get_instance()->registrate(this);//probably there will be error with shared_ptr
 }
 
 void FunctionalObject::set_hover_action(std::shared_ptr<IFunctor> action)
@@ -195,7 +195,7 @@ bool FunctionalObject::check_coordinate(float x, float y)
 }
 
 FunctionalObject::Memento::Memento(FunctionalObject* owner, std::shared_ptr<IFunctor> hover_func, std::shared_ptr<IFunctor> mouse_func, std::shared_ptr<IFunctor> move_func,
-                std::shared_ptr<IFunctor> break_hover_func, std::shared_ptr<IMemento> shape_save): owner(owner), hover_func(hover_func), mouse_func(mouse_func),
+                std::shared_ptr<IFunctor> break_hover_func, IMemento* shape_save): owner(owner), hover_func(hover_func), mouse_func(mouse_func),
                                                                                                    move_func(move_func), break_hover_func(break_hover_func), shape_save(shape_save) {}
 void FunctionalObject::Memento::restore()
 {
@@ -206,10 +206,10 @@ void FunctionalObject::Memento::restore()
     shape_save->restore();
 }
 
-std::shared_ptr<IMemento> FunctionalObject::save()
+IMemento* FunctionalObject::save()
 {
-    std::shared_ptr<IMemento> shape_save = shape.save();
-    std::shared_ptr<IMemento> memento = std::make_shared<Memento>(this, hover_func, mouse_func, move_func, break_hover_func, shape_save);
+    IMemento* shape_save = shape.save();
+    IMemento* memento = new Memento(this, hover_func, mouse_func, move_func, break_hover_func, shape_save);
     return memento;
 }
 
@@ -218,8 +218,8 @@ std::shared_ptr<IMemento> FunctionalObject::save()
 // Memento
 
     MementoManager* MementoManager::instance;
-    MementoManager::Memento::Memento(MementoManager* owner, const std::vector<std::shared_ptr<IMementable>>& mementable_list,
-                                     const std::vector<std::shared_ptr<IMemento>>& memory): owner(owner), mementable_list(mementable_list), memory(memory) {}
+    MementoManager::Memento::Memento(MementoManager* owner, const std::vector<IMementable*>& mementable_list,
+                                     const std::vector<IMemento*>& memory): owner(owner), mementable_list(mementable_list), memory(memory) {}
 
     void MementoManager::Memento::restore()
     {
@@ -240,19 +240,19 @@ std::shared_ptr<IMemento> FunctionalObject::save()
 
     MementoManager::MementoManager(){}
 
-    void MementoManager::registrate(std::shared_ptr<IMementable> obj)
+    void MementoManager::registrate(IMementable* obj)
     {
         mementable_list.push_back(obj);
     }
 
-    std::shared_ptr<IMemento> MementoManager::save()
+    IMemento* MementoManager::save()
     {
-        std::vector<std::shared_ptr<IMemento>> memory(mementable_list.size());
-        for(auto& item : mementable_list)
+        std::vector<IMemento*> memory(mementable_list.size());
+        for(std::size_t i = 0; i < memory.size(); i++)
         {
-            memory.push_back(item->save());
+            memory[i]=mementable_list[i]->save();
         }
-        std::shared_ptr<IMemento> memento = std::make_shared<Memento>(instance, mementable_list, memory);
+        IMemento* memento = new Memento(instance, mementable_list, memory);
         return memento;
     }
 

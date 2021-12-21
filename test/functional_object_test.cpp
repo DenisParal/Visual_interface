@@ -32,7 +32,9 @@ int main()
     auto lambda = [](sf::RenderWindow& window)
     {
         auto act1 = [&window](){window.close();};
-        std::shared_ptr<IMemento> save = nullptr;
+        IMemento* save = nullptr;
+        bool save_status = false; // workaround for double free error
+        button<decltype(act1)> b1(600,0,200,50,act1,sf::Color::Green,"save/load");
 
         std::shared_ptr<sf::RenderTexture> picture = std::make_shared<sf::RenderTexture>();
         picture->create(800,600);
@@ -63,6 +65,7 @@ int main()
 
                 if (event.type == sf::Event::MouseButtonPressed)
                 {
+                    sf::Vector2i localPosition = sf::Mouse::getPosition(window);
                     chosen = chose_obj(window, obj_v);
                     if(chosen != nullptr)
                     {
@@ -83,6 +86,20 @@ int main()
                         }
                         chosen->act_on_click();
                         chosen->is_moving=false;
+                    }
+                    else if(b1.check_coordinate(localPosition.x, localPosition.y))
+                    {
+                        if(!save_status)
+                        {
+                            save = MementoManager::get_instance()->save();
+                            save_status = true;
+                        }
+                        else
+                        {
+                            save->restore();
+                            save_status = false;
+                            save = nullptr; //this line produces double free error, try to fix in future
+                        }
                     }
                     else
                     {
@@ -127,6 +144,7 @@ int main()
             sf::Sprite sprite1(picture->getTexture());
 
             window.draw(sprite1);
+            b1.display(&window);
             window.display();
         }
     };
