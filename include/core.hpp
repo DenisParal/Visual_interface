@@ -24,7 +24,7 @@ class MementoManager : public IMementable
 {
 private:
     MementoManager();
-    static std::shared_ptr<MementoManager> instance;
+    static MementoManager* instance;
     std::vector<std::shared_ptr<IMementable>> mementable_list;
 
     class Memento : public IMemento
@@ -34,12 +34,12 @@ private:
         std::vector<std::shared_ptr<IMementable>> mementable_list;
         std::vector<std::shared_ptr<IMemento>> memory;
     public:
-        Memento(std::shared_ptr<MementoManager> owner, const std::vector<std::shared_ptr<IMementable>>& mementable_list, const std::vector<std::shared_ptr<IMemento>>& memory);
+        Memento(MementoManager* owner, const std::vector<std::shared_ptr<IMementable>>& mementable_list, const std::vector<std::shared_ptr<IMemento>>& memory);
         void restore() override;
     };
 
 public:
-    static std::shared_ptr<MementoManager> get_instance();
+    static MementoManager* get_instance();
     void registrate(std::shared_ptr<IMementable> obj);
     std::shared_ptr<IMemento> save() override;
 };
@@ -58,14 +58,14 @@ private:
     class Memento : public IMemento
     {
     private:
-        std::shared_ptr<ComplexShape> owner;
+        ComplexShape* owner;
         std::vector<std::shared_ptr<sf::Shape>> shapes;
         std::vector<sf::Vector2f> positions;
         sf::Vector2f center_position;
         float scale = 1;
         std::size_t complexity;
     public:
-        Memento(std::shared_ptr<ComplexShape> owner, const std::vector<std::shared_ptr<sf::Shape>>& shapes, const std::vector<sf::Vector2f>& positions,
+        Memento(ComplexShape* owner, const std::vector<std::shared_ptr<sf::Shape>>& shapes, const std::vector<sf::Vector2f>& positions,
                 sf::Vector2f center_position, float scale, std::size_t complexity);
         void restore() override;
     };
@@ -118,14 +118,14 @@ private:
     class Memento : public IMemento
     {
     private:
-        std::shared_ptr<FunctionalObject> owner;//Probably I should replace std::shared_ptr with raw pointer
+        FunctionalObject* owner;//Probably I should replace std::shared_ptr with raw pointer
         std::shared_ptr<IFunctor> hover_func = nullptr;
         std::shared_ptr<IFunctor> mouse_func = nullptr;
         std::shared_ptr<IFunctor> move_func = nullptr;
         std::shared_ptr<IFunctor> break_hover_func = nullptr;
         std::shared_ptr<IMemento> shape_save;
     public:
-        Memento(std::shared_ptr<FunctionalObject> owner, std::shared_ptr<IFunctor> hover_func, std::shared_ptr<IFunctor> mouse_func, std::shared_ptr<IFunctor> move_func,
+        Memento(FunctionalObject* owner, std::shared_ptr<IFunctor> hover_func, std::shared_ptr<IFunctor> mouse_func, std::shared_ptr<IFunctor> move_func,
                 std::shared_ptr<IFunctor> break_hover_func, std::shared_ptr<IMemento> shape_save);
         void restore() override;
     };
